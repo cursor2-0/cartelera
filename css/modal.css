@@ -1,0 +1,67 @@
+/* Modal para visualizar documentos */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.modal-content {
+    position: relative;
+    margin: auto;
+    padding: 20px;
+    width: 90%;
+    height: 90%;
+    background: white;
+    border-radius: 10px;
+    top: 5%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 48px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+.documento-viewer {
+    width: 100%;
+    height: calc(100% - 80px);
+    border: none;
+    border-radius: 5px;
+}
+
+/* Navegación del modal */
+.navigation {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.nav-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    margin: 0 10px;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    background: #2980b9;
+}
+
+.nav-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
