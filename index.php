@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Cartelera Fiscal Corporacion Teno C.A.</h1>
+        <img src="css/logo.png" alt="Cartelera Fiscal Corporacion Teno C.A." class="logo">
     </div>
 
     <div class="grid-container" id="gridContainer">
@@ -293,11 +293,179 @@
             console.log('Cartelera inicializada correctamente');
         }
 
+        // Variables para SSE
+        let eventSource = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        
+        // Función para inicializar Server-Sent Events
+        function initSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            console.log('Iniciando conexión SSE...');
+            eventSource = new EventSource('api/sse_updates.php');
+            
+            eventSource.onopen = function(event) {
+                console.log('Conexión SSE establecida');
+                reconnectAttempts = 0;
+                
+                // Mostrar indicador de conexión
+                showConnectionStatus('Conectado - Actualizaciones en tiempo real', 'success');
+            };
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Evento SSE recibido:', data);
+                    
+                    if (data.type === 'document_change') {
+                        console.log('Detectado cambio en documentos, recargando...');
+                        loadCartelera();
+                        showNotification('Documentos actualizados automáticamente', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error procesando evento SSE:', error);
+                }
+            };
+            
+            eventSource.addEventListener('connected', function(event) {
+                const data = JSON.parse(event.data);
+                console.log('SSE conectado:', data.message);
+            });
+            
+            eventSource.addEventListener('update', function(event) {
+                const data = JSON.parse(event.data);
+                console.log('Actualización detectada:', data);
+                loadCartelera();
+                showNotification(`${data.message} (${data.changeType})`, 'success');
+            });
+            
+            eventSource.addEventListener('heartbeat', function(event) {
+                // Heartbeat silencioso para mantener la conexión
+                console.log('SSE heartbeat recibido');
+            });
+            
+            eventSource.addEventListener('error', function(event) {
+                const data = JSON.parse(event.data);
+                console.error('Error SSE:', data.message);
+                showNotification('Error en actualizaciones automáticas', 'error');
+            });
+            
+            eventSource.onerror = function(event) {
+                console.error('Error en conexión SSE:', event);
+                showConnectionStatus('Desconectado - Reintentando...', 'error');
+                
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reintentando conexión SSE (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                    setTimeout(() => {
+                        initSSE();
+                    }, 3000 * reconnectAttempts); // Incrementar delay
+                } else {
+                    console.error('Máximo de reintentos alcanzado para SSE');
+                    showConnectionStatus('Sin actualizaciones automáticas', 'warning');
+                }
+            };
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 5px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            // Colores según tipo
+            const colors = {
+                success: '#27ae60',
+                error: '#e74c3c',
+                warning: '#f39c12',
+                info: '#3498db'
+            };
+            notification.style.backgroundColor = colors[type] || colors.info;
+            
+            document.body.appendChild(notification);
+            
+            // Mostrar con animación
+            setTimeout(() => {
+                notification.style.opacity = '1';
+            }, 100);
+            
+            // Ocultar después de 4 segundos
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 4000);
+        }
+        
+        // Función para mostrar estado de conexión
+        function showConnectionStatus(message, type) {
+            let statusElement = document.getElementById('connection-status');
+            if (!statusElement) {
+                statusElement = document.createElement('div');
+                statusElement.id = 'connection-status';
+                statusElement.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 20px;
+                    padding: 8px 15px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    z-index: 9999;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(statusElement);
+            }
+            
+            statusElement.textContent = message;
+            
+            const colors = {
+                success: { bg: '#27ae60', text: 'white' },
+                error: { bg: '#e74c3c', text: 'white' },
+                warning: { bg: '#f39c12', text: 'white' }
+            };
+            
+            const color = colors[type] || colors.success;
+            statusElement.style.backgroundColor = color.bg;
+            statusElement.style.color = color.text;
+        }
+        
+        // Limpiar SSE al cerrar la página
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+
         // Inicializar cuando el DOM esté listo
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initCartelera);
+            document.addEventListener('DOMContentLoaded', function() {
+                initCartelera();
+                // Iniciar SSE después de cargar la cartelera
+                setTimeout(initSSE, 1000);
+            });
         } else {
             initCartelera();
+            setTimeout(initSSE, 1000);
         }
     </script>
 </body>
