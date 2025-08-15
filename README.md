@@ -36,7 +36,7 @@ Editar `config/database.php` con sus credenciales:
 
 ```php
 private $host = 'localhost';
-private $db_name = 'BASE_DE_DATOS;
+private $db_name = 'BASE_DE_DATOS';
 private $username = 'su_usuario';
 private $password = 'su_contraseña';
 private $port = 'PUERTO';
