@@ -36,10 +36,10 @@ Editar `config/database.php` con sus credenciales:
 
 ```php
 private $host = 'localhost';
-private $db_name = 'cartelera';
+private $db_name = 'BASE DE DATOS;
 private $username = 'su_usuario';
 private $password = 'su_contraseña';
-private $port = '5432';
+private $port = 'PUERTO';
 ```
 
 ### 3. Configuración Inicial
